@@ -203,7 +203,7 @@ void run_Ms_and_Ns(){
         // vector<int> vec_ms(ms, ms + sizeof(ms) / sizeof(int));
         vector<int> vec_ms;
         int prev_m = -1;
-        for(int i = 0; i < 120; i++){
+        for(int i = 0; i < 150; i++){
             int m = int(pow(1.1, i));
             if(m == prev_m) continue;
             vec_ms.push_back(m);
