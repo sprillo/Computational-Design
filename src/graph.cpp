@@ -180,7 +180,7 @@ void doit(){
         design();
         // cerr << "Designed value = " << designed_val << endl;
         counter_global_opt_success += determine_global_opt_success();
-        // Global opt should success IFF N-1 and N-1 are in the same connected component.
+        // Global opt should succeed iff N-1 and N-1 are in the same connected component.
         if(in_same_connected_component(N - 1, N - 1)){
             assert(determine_global_opt_success() == 1);
         } else {
