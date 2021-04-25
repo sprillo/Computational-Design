@@ -23,8 +23,10 @@ vector<vector<int> > connected_components;
 
 void sample_random_function(){
     forn(i, N){
-        left_value[i] = 2 * i;
-        right_value[i] = 2 * i + 1;
+        // left_value[i] = 2 * i;
+        // right_value[i] = 2 * i + 1;
+        left_value[i] = i;
+        right_value[i] = i + N;
     }
 }
 
@@ -137,11 +139,12 @@ void design(){
 
 int determine_global_opt_success(){
     assert(!(designed_val > global_optima));
-    return 1 * (designed_val >= global_optima);
+    return 1 * (designed_val == global_optima);
 }
 
 int determine_design_success(){
-    return 1 * ((designed_val >= global_optima) || (designed_val > dataset_maxima));
+    assert(!(designed_val > global_optima));
+    return 1 * ((designed_val == global_optima) || (designed_val > dataset_maxima));
 }
 
 vector<int> Ns;
@@ -149,6 +152,15 @@ vector<int> Ms;
 vector<double> probs_fully_connected;
 vector<double> probs_global_opt_success;
 vector<double> probs_design_success;
+
+bool in_same_connected_component(int a, int b){
+    for(auto curr_connected_component: connected_components){
+        if(count(curr_connected_component.begin(), curr_connected_component.end(), a)){
+            return count(curr_connected_component.begin(), curr_connected_component.end(), b + N) > 0;
+        }
+    }
+    return false;
+}
 
 void doit(){
     int counter_fully_connected = 0;
@@ -168,6 +180,12 @@ void doit(){
         design();
         // cerr << "Designed value = " << designed_val << endl;
         counter_global_opt_success += determine_global_opt_success();
+        // Global opt should success IFF N-1 and N-1 are in the same connected component.
+        if(in_same_connected_component(N - 1, N - 1)){
+            assert(determine_global_opt_success() == 1);
+        } else {
+            assert(determine_global_opt_success() == 0);
+        }
         counter_design_success += determine_design_success();
         if(connected_components.size() == 1) counter_fully_connected++;
         // for(auto c: connected_components){
