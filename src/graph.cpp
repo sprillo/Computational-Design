@@ -5,8 +5,10 @@
 #include <time.h>
 #include <string.h>
 #include <fstream>
+#include <assert.h>
 
 #define forn(i, n) for(int i = 0; i < int(n); i++)
+#define mp make_pair
 
 using namespace std;
 
@@ -14,18 +16,15 @@ bool verbose = false;
 const int maxN = 10000;
 int N;
 int M;
-float left_value[maxN];
-float right_value[maxN];
+int left_value[maxN];
+int right_value[maxN];
 vector<int> g[2 * maxN];
 vector<vector<int> > connected_components;
 
-default_random_engine generator;
-uniform_real_distribution<double> distribution(0.0,1.0);
-
 void sample_random_function(){
     forn(i, N){
-        left_value[i] = distribution(generator);
-        right_value[i] = distribution(generator);
+        left_value[i] = 2 * i;
+        right_value[i] = 2 * i + 1;
     }
 }
 
@@ -81,41 +80,41 @@ void compute_connected_components(){
     }
 }
 
-float global_optima = 0.0;
+pair<int, int> global_optima = mp(-1, -1);
 
 void compute_global_optima(){
-    global_optima = -1e8;
-    float max_left = -1e8;
-    float max_right = -1e8;
+    global_optima = mp(-1, -1);
+    int max_left = -1000;
+    int max_right = -1000;
     forn(i, N) max_left = max(max_left, left_value[i]);
     forn(i, N) max_right = max(max_right, right_value[i]);
-    global_optima = max_left + max_right;
-    assert(global_optima >= 0); // Since all values are positive
+    global_optima = mp(max(max_left, max_right), min(max_left, max_right));
+    assert(global_optima >= mp(0, 0)); // Since all values are positive
 }
 
-float dataset_maxima = 0.0;
+pair<int, int> dataset_maxima = mp(-1, -1);
 
 void compute_dataset_maxima(){
-    dataset_maxima = -1e8;
+    dataset_maxima = mp(-1, -1);
     forn(v, N) for(int u: g[v]){
         assert(u >= N);
         assert(u < 2 * N);
-        dataset_maxima = max(dataset_maxima, left_value[v] + right_value[u - N]);
+        dataset_maxima = max(dataset_maxima, mp(max(left_value[v], right_value[u - N]), min(left_value[v], right_value[u - N])));
     }
-    assert(dataset_maxima >= 0.0); // Since all values are positive and we sample at least 1 edge.
+    assert(dataset_maxima >= mp(0, 0)); // Since all values are positive and we sample at least 1 edge.
 }
 
-float designed_val = 0.0;
+pair<int, int> designed_val = mp(-1, -1);
 
 void show(vector<int> v){
     for(int u: v) cerr << u << " ";
 }
 
 void design(){
-    designed_val = -1e8;
+    designed_val = mp(-1, -1);
     for(vector<int> curr_connected_component: connected_components){
-        float best_left = -1e8;
-        float best_right = -1e8;
+        int best_left = -1000;
+        int best_right = -1000;
         for(int v: curr_connected_component){
             // cerr << "v = " << v << endl;
             if(v < N){
@@ -130,24 +129,26 @@ void design(){
         // cerr << "Connected component ";
         // show(curr_connected_component);
         // cerr << " value = " << best_left + best_right << endl;
-        designed_val = max(designed_val, best_left + best_right);
+        if(best_left >= 0 && best_right >= 0)
+            designed_val = max(designed_val, mp(max(best_left, best_right), min(best_left, best_right)));
     }
-    assert(designed_val >= 0.0); // Since all values are positive and we sample at least 1 edge.
+    assert(designed_val >= mp(0, 0)); // Since all values are positive and we sample at least 1 edge.
 }
 
 int determine_global_opt_success(){
-    return 1 * (designed_val >= global_optima - 1e-16);
+    assert(!(designed_val > global_optima));
+    return 1 * (designed_val >= global_optima);
 }
 
 int determine_design_success(){
-    return 1 * ((designed_val >= global_optima - 1e-16) || (designed_val > dataset_maxima + 1e-16));
+    return 1 * ((designed_val >= global_optima) || (designed_val > dataset_maxima));
 }
 
 vector<int> Ns;
 vector<int> Ms;
-vector<float> probs_fully_connected;
-vector<float> probs_global_opt_success;
-vector<float> probs_design_success;
+vector<double> probs_fully_connected;
+vector<double> probs_global_opt_success;
+vector<double> probs_design_success;
 
 void doit(){
     int counter_fully_connected = 0;
@@ -176,12 +177,12 @@ void doit(){
     }
     Ns.push_back(N);
     Ms.push_back(M);
-    probs_fully_connected.push_back(float(counter_fully_connected) / repetitions);
-    probs_global_opt_success.push_back(float(counter_global_opt_success) / repetitions);
-    probs_design_success.push_back(float(counter_design_success) / repetitions);
-    cout << "Prob. fully connected = " << float(counter_fully_connected) / repetitions << endl;
-    cout << "Prob. global opt success = " << float(counter_global_opt_success) / repetitions << endl;
-    cout << "Prob. design success = " << float(counter_design_success) / repetitions << endl;
+    probs_fully_connected.push_back(double(counter_fully_connected) / repetitions);
+    probs_global_opt_success.push_back(double(counter_global_opt_success) / repetitions);
+    probs_design_success.push_back(double(counter_design_success) / repetitions);
+    cout << "Prob. fully connected = " << double(counter_fully_connected) / repetitions << endl;
+    cout << "Prob. global opt success = " << double(counter_global_opt_success) / repetitions << endl;
+    cout << "Prob. design success = " << double(counter_design_success) / repetitions << endl;
 }
 
 void write_out_results(){
